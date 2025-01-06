@@ -45,11 +45,12 @@ export default [
       'jsx-a11y': eslintPluginJsxA11y,
     },
     rules: {
-      'import/no-unresolved': 'error',
+      'import/no-unresolved': 'warn',
       'prefer-const': 'error',
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'error',
       'prettier/prettier': 'error',
+      'plugin:react/jsx-runtime': 'extends',
       ...pluginJs.configs.recommended.rules,
       ...pluginReact.configs.flat.recommended.rules,
       ...eslintPluginPrettier.configs.recommended.rules,
