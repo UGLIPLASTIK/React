@@ -1,21 +1,28 @@
 import './App.scss';
 import { getMovieDB, getGenres } from '../../tmdb-services/tmdb';
 import { useEffect, useState } from 'react';
-import { Card, Image, Button } from 'antd';
+import { Card, Image, Button, Flex, Spin, Alert } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 import { format } from 'date-fns';
 
 function App() {
   const [data, setData] = useState(false);
   const [genres, setGenres] = useState(null);
+  const [onError, setOnError] = useState(false);
   const posterSize = 'w300';
 
   useEffect(() => {
-    getGenres().then((data) => {
-      setGenres(data.genres);
-    });
-    getMovieDB().then((data) => {
-      setData(data.results);
-    });
+    getMovieDB()
+      .then((data) => {
+        setData(data.results);
+        getGenres().then((data) => {
+          setGenres(data.genres);
+        });
+      })
+      .catch((err) => {
+        setOnError(true);
+        console.log('Error Detected: ' + err);
+      });
   }, []);
 
   const styles = {
@@ -30,6 +37,9 @@ function App() {
     button: {
       fontSize: '12px',
       height: '20px',
+    },
+    flex: {
+      height: '100vh',
     },
   };
 
@@ -56,7 +66,27 @@ function App() {
     return result.text;
   };
 
-  if (!data) return <div>LOADING...</div>;
+  if (!data && !onError)
+    return (
+      <Flex align="center" justify="center" style={styles.flex}>
+        <Spin
+          indicator={
+            <LoadingOutlined
+              style={{
+                fontSize: 80,
+              }}
+              spin
+            />
+          }
+        />
+      </Flex>
+    );
+
+  if (!data && onError)
+    return (
+      <Alert message="Request is temporarily unavailable, please try again later" type="warning" closable={false} />
+    );
+
   return (
     <div className="App">
       <section className="card-list">

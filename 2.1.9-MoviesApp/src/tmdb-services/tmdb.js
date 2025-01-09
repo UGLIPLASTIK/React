@@ -10,7 +10,7 @@ export const getMovieDB = async () => {
     },
   };
   const response = await fetch(url, options);
-  return response.ok ? response.json() : new Error('Произошла ошибка');
+  return response.ok ? response.json() : Error('Ошибка при получении данных: ' + response.statusText);
 };
 
 export const getGenres = async () => {
@@ -24,6 +24,6 @@ export const getGenres = async () => {
     },
   };
   const response = await fetch(url, options);
-  return response.ok ? response.json() : new Error('Произошло фиаско');
+  return response.ok ? response.json() : Error('Ошибка при получении данных: ' + response.statusText);
 };
 
