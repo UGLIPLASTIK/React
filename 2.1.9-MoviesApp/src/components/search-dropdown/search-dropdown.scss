@@ -1,0 +1,16 @@
+.dropdown {
+  font-family: "Inter Regular", "Arial", sans-serif;
+  position: absolute;
+  z-index: 10;
+  background-color: white;
+  width: 100%;
+  border: 2px solid rgba(146, 145, 145, 0.17);
+  border-radius: 7px;
+  padding: 10px;
+  margin: 0;
+  margin-top: 3px;
+  list-style-type: none;
+  li {
+    text-align: left;
+  }
+}

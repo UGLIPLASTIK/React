@@ -11,6 +11,19 @@
   .ant-image-mask {
     width: 180px;
   }
+  .rating {
+    position: absolute;
+    border: 2px solid rgb(82, 82, 82);
+    border-radius: 20px;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
   
   .card-content {
     display: flex;
@@ -30,8 +43,10 @@
     }
   }
   h2 {
+    max-width: 190px;
     font-size: 20px;
     margin-bottom: 7px;
+    margin-top: 10px;
   }
   .movie-info {
     font-size: 12px;
