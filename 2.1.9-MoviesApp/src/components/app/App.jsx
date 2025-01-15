@@ -54,21 +54,16 @@ class App extends Component {
 
   componentDidMount() {
     getGenres().then((data) => {
-      this.setState(() => {
-        return {
-          genres: data.genres,
-        };
+      this.setState({
+        genres: data.genres,
       });
     });
 
     getMovieDB(this.state.currentPage)
       .then((data) => {
-        this.setState(() => {
-          console.log(data);
-          return {
-            totalPages: data.total_results,
-            data: data.results,
-          };
+        this.setState({
+          totalPages: data.total_results,
+          data: data.results,
         });
       })
       .catch((err) => {
@@ -82,47 +77,22 @@ class App extends Component {
   }
 
   tooglePage = (page) => {
-    if (this.state.searching) {
-      findMovie(this.state.searchingWord, page)
-        .then((data) => {
-          this.setState(() => {
-            return {
-              data: data.results,
-            };
-          });
-        })
-        .catch((err) => {
-          this.setState(() => {
-            return {
-              onError: true,
-            };
-          });
-          console.log('Error Detected: ' + err);
+    const { searching, searchingWord } = this.state;
+    const fetchData = searching ? findMovie(searchingWord, page) : getMovieDB(page);
+    fetchData
+      .then((data) => {
+        this.setState({
+          data: data.results,
+          currentPage: page,
+          onError: false,
         });
-    } else {
-      getMovieDB(page)
-        .then((data) => {
-          this.setState(() => {
-            return {
-              data: data.results,
-            };
-          });
-        })
-        .catch((err) => {
-          this.setState(() => {
-            return {
-              onError: true,
-            };
-          });
-          console.log('Error Detected: ' + err);
+      })
+      .catch((err) => {
+        this.setState({
+          onError: true,
         });
-    }
-
-    this.setState(() => {
-      return {
-        currentPage: page,
-      };
-    });
+        console.error('Error Detected: ', err);
+      });
   };
 
   getGenresForMovie = (id, genresArr = []) => {
