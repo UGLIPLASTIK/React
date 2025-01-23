@@ -1,28 +1,41 @@
 import './search.scss';
-// import SearchDropdown from '../search-dropdown';
 import { func, object, arrayOf, bool } from 'prop-types';
 import { Component } from 'react';
 
 class Search extends Component {
   render() {
-    const { inputOnChangeFn } = this.props;
+    // eslint-disable-next-line react/prop-types
+    const { inputOnChangeFn, show, toggleFn, showRated } = this.props;
+
     return (
       <section className="search">
         <div className="search_btn-group">
-          <button className="active">Search</button>
-          <button>Rated</button>
+          <button id="search" onClick={toggleFn} className="mode-btn active">
+            Search
+          </button>
+          <button id="rated" onClick={toggleFn} className="mode-btn">
+            Rated
+          </button>
         </div>
-        <input id="search-input" onChange={inputOnChangeFn} type="text" placeholder="Type to search..." />
-        {/* <SearchDropdown searching={searching} filtredList={findList} /> */}
+        <input
+          style={{ display: show ? 'block' : 'none' }}
+          id="search-input"
+          onChange={inputOnChangeFn}
+          type="text"
+          placeholder="Type to search..."
+        />
+        <button onClick={showRated}>Show Rated Films</button>
       </section>
     );
   }
 }
 
 Search.propTypes = {
+  toggleFn: func,
   inputOnChangeFn: func,
   findList: arrayOf(object),
   searching: bool,
+  show: bool,
 };
 
 export default Search;

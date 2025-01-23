@@ -1,121 +1,93 @@
 import './App.scss';
-import { getMovieDB, getGenres, findMovie } from '../../tmdb-services/tmdb';
+import {
+  getMovieDB,
+  getGenres,
+  findMovie,
+  startGuestSession,
+  addRating,
+  getRatedMovies,
+} from '../../tmdb-services/tmdb';
 import { Component } from 'react';
-import { Card, Image, Button, Flex, Spin, Alert, Pagination } from 'antd';
+import { Flex, Spin, Alert } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import { format } from 'date-fns';
 import Search from '../search';
-import { array, arrayOf, bool, object } from 'prop-types';
+import CardList from '../card-list';
+import { GenresProvider } from '../../app-context';
+// import { Offline, Online } from 'react-detect-offline';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      data: false,
-      genres: [],
-      onError: false,
-      searching: false,
-      searchingWord: null,
-      currentPage: 1,
-      totalPages: null,
-    };
-  }
-
-  styles = {
-    card: {
-      width: 450,
-      boxShadow: '0px 4px 12px 0px rgba(0, 0, 0, 0.15)',
-    },
-    image: {
-      width: '180px',
-    },
-    button: {
-      fontSize: '12px',
-      height: '20px',
-    },
-    flex: {
-      height: '100vh',
-    },
-    rating: (rating) => {
-      return {
-        borderColor:
-          rating >= 7 ? 'rgb(109 186 109)' : rating < 7 && rating >= 5 ? 'rgba(233, 209, 0, 1)' : 'rgb(222 75 75)',
-      };
-    },
-    pagination: {
-      width: '100%',
-      display: 'flex',
-      justifyContent: 'center',
-      gap: 20,
-    },
+  state = {
+    data: false,
+    genres: [],
+    onError: false,
+    searching: false,
+    searchingWord: null,
+    currentPage: 1,
+    totalPages: null,
+    guestSessionId: null,
+    loading: true,
+    showSearching: true,
   };
 
-  posterSize = 'w300';
-
   componentDidMount() {
-    getGenres().then((data) => {
-      this.setState({
-        genres: data.genres,
-      });
-    });
+    this.setState({ loading: true });
 
-    getMovieDB(this.state.currentPage)
-      .then((data) => {
+    const guestSessionPromise =
+      sessionStorage.getItem('guest_session_id') && sessionStorage.getItem('guest_session_id') != 'undefined'
+        ? Promise.resolve({ guest_session_id: sessionStorage.getItem('guest_session_id') })
+        : startGuestSession();
+    const genresPromise = getGenres();
+    const moviesPromise = getMovieDB(this.state.currentPage);
+
+    Promise.all([guestSessionPromise, genresPromise, moviesPromise])
+      .then(([guestSessionData, genresData, moviesData]) => {
         this.setState({
-          totalPages: data.total_results,
-          data: data.results,
+          guestSessionId: guestSessionData.guest_session_id,
+          genres: genresData.genres,
+          totalPages: moviesData.total_results,
+          data: moviesData.results,
+          loading: false,
         });
+        if (!sessionStorage.getItem('guest_session_id'))
+          sessionStorage.setItem('guest_session_id', guestSessionData.guest_session_id);
       })
       .catch((err) => {
-        this.setState(() => {
-          return {
-            onError: true,
-          };
-        });
-        console.log('Error Detected: ' + err);
+        console.log(`Error Detected: ${err}`);
+        this.setState({ onError: true, loading: false });
       });
   }
 
   tooglePage = (page) => {
     const { searching, searchingWord } = this.state;
     const fetchData = searching ? findMovie(searchingWord, page) : getMovieDB(page);
+    this.setState({ loading: true });
     fetchData
       .then((data) => {
         this.setState({
           data: data.results,
           currentPage: page,
           onError: false,
+          loading: false,
         });
       })
       .catch((err) => {
-        this.setState({
-          onError: true,
-        });
+        this.setState({ onError: true });
         console.error('Error Detected: ', err);
       });
   };
 
-  getGenresForMovie = (id, genresArr = []) => {
-    return genresArr.find((g) => (g ? id == g.id : null)).name;
-  };
+  swichMode = (e) => {
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach((btn) => btn.classList.remove('active'));
+    e.target.classList.add('active');
+    if (e.target.id == 'rated') {
+      getRatedMovies(this.state.guestSessionId).then((data) => {
+        console.log(data);
+        this.setState({ data: data.results, totalPages: data.total_results });
+      });
+    }
 
-  cropText = (text) => {
-    const maxSimbols = 190;
-    const result = text.split(' ').reduce(
-      (acc, el) => {
-        if (acc.skip) return acc;
-        if ((acc.text + el).length > maxSimbols - 3) {
-          acc.text += '...';
-          acc.skip = true;
-        }
-        if (!acc.skip) {
-          acc.text += el + ' ';
-        }
-        return acc;
-      },
-      { skip: false, text: '' }
-    );
-    return result.text;
+    this.setState({ showSearching: e.target.id == 'search' ? true : false });
   };
 
   debounce(func, ms) {
@@ -129,36 +101,47 @@ class App extends Component {
   startSearching = this.debounce((event) => {
     const searchWord = event.target.value.trim();
     if (!searchWord) return;
-    this.setState(() => {
-      return {
-        currentPage: 1,
-        searching: true,
-        searchingWord: searchWord,
-      };
+
+    this.setState({
+      currentPage: 1,
+      searching: true,
+      loading: true,
+      searchingWord: searchWord,
     });
     findMovie(searchWord)
       .then((data) => {
-        this.setState(() => {
-          return {
-            totalPages: data.total_results,
-            data: data.results,
-          };
+        this.setState({
+          totalPages: data.total_results,
+          data: data.results,
+          loading: false,
         });
       })
       .catch((error) => {
         console.error('Ошибка при поиске:', error);
         this.setState({ searching: false });
       });
-  }, 3000);
+  }, 2000);
+
+  setMovieRating = (value, id) => {
+    const { guestSessionId } = this.state;
+    addRating(id, guestSessionId, value);
+  };
+
+  showRated = () => {
+    // getRatedMovies(this.state.guestSessionId).then((data) => console.log(data));
+    console.log(this.state);
+  };
 
   render() {
-    const { data, genres, onError, currentPage, totalPages } = this.state;
+    if (!navigator.onLine) {
+      alert('Нет соединения с интернетом. Пожалуйста, проверьте ваше подключение.');
+      return;
+    }
+    const { data, genres, onError, currentPage, totalPages, loading, showSearching } = this.state;
 
-    const { card, image, button, pagination, rating, flex } = this.styles;
-
-    if (!data && !onError)
+    if (loading && !onError)
       return (
-        <Flex align="center" justify="center" style={flex}>
+        <Flex align="center" justify="center" style={{ height: '100vh' }}>
           <Spin
             indicator={
               <LoadingOutlined
@@ -179,83 +162,23 @@ class App extends Component {
 
     return (
       <div className="App">
-        <Search inputOnChangeFn={this.startSearching} />
-        <section className="card-list">
-          <Pagination
-            style={pagination}
-            onChange={this.tooglePage}
-            defaultCurrent={currentPage}
-            current={currentPage}
-            total={totalPages}
-            pageSize={20}
-            showSizeChanger={false}
+        <GenresProvider value={genres}>
+          <Search
+            showRated={this.showRated}
+            show={showSearching}
+            inputOnChangeFn={this.startSearching}
+            toggleFn={this.swichMode}
           />
-          {!data.length ? (
-            <Alert message="Ничего не найдено" type="warning" closable={false} />
-          ) : (
-            data.map((movie) => {
-              return (
-                <div key={movie.id} className="movie-card">
-                  <Card className="card" bordered={false} loading={false} style={card}>
-                    <div className="rating" style={rating(movie.vote_average)}>
-                      {movie.vote_average.toFixed(1)}
-                    </div>
-                    <div className="card-content">
-                      <Image
-                        width={200}
-                        src={`https://image.tmdb.org/t/p/${this.posterSize}${movie.poster_path}`}
-                        style={image}
-                      />
-                      <div className="movie-info">
-                        <h2>{movie.original_title}</h2>
-                        <span className="relise-date">
-                          {movie.release_date ? format(movie.release_date, 'MMMM dd, yyyy') : '---'}
-                        </span>
-                        <div className="janre-btns-group">
-                          {movie.genre_ids.map((id, i) => {
-                            if (i <= 2) {
-                              return (
-                                <Button
-                                  key={movie.id + id}
-                                  color="default"
-                                  variant="outlined"
-                                  size="small"
-                                  style={button}
-                                >
-                                  {this.getGenresForMovie(id, genres)}
-                                </Button>
-                              );
-                            } else return;
-                          })}
-                        </div>
-                        <p>{this.cropText(movie.overview)}</p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              );
-            })
-          )}
-          <Pagination
-            style={pagination}
-            onChange={this.tooglePage}
-            defaultCurrent={currentPage}
-            current={currentPage}
-            total={totalPages}
-            pageSize={20}
-            showSizeChanger={false}
+          <CardList
+            movieRatingOnchange={this.setMovieRating}
+            data={data}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            tooglePage={this.tooglePage}
           />
-        </section>
+        </GenresProvider>
       </div>
     );
   }
 }
-
-App.propTypes = {
-  data: arrayOf(object),
-  genres: array,
-  onError: bool,
-  searching: bool,
-};
-
 export default App;

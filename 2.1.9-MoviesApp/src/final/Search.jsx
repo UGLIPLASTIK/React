@@ -1,8 +1,7 @@
 import './search.scss';
-import SearchDropdown from '../search-dropdown';
 import { func, object, arrayOf, bool } from 'prop-types';
 
-const Search = ({ inputOnChangeFn, findList, searching }) => {
+const Search = ({ inputOnChangeFn }) => {
   return (
     <section className="search">
       <div className="search_btn-group">
@@ -10,7 +9,6 @@ const Search = ({ inputOnChangeFn, findList, searching }) => {
         <button>Rated</button>
       </div>
       <input id="search-input" onChange={inputOnChangeFn} type="text" placeholder="Type to search..." />
-      <SearchDropdown searching={searching} filtredList={findList} />
     </section>
   );
 };
