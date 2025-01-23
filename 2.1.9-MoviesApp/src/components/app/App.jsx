@@ -8,16 +8,15 @@ import {
   getRatedMovies,
 } from '../../tmdb-services/tmdb';
 import { Component } from 'react';
-import { Flex, Spin, Alert } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
+import { Alert } from 'antd';
 import Search from '../search';
 import CardList from '../card-list';
 import { GenresProvider } from '../../app-context';
-// import { Offline, Online } from 'react-detect-offline';
 
 class App extends Component {
   state = {
-    data: false,
+    data: null,
+    ratedData: [],
     genres: [],
     onError: false,
     searching: false,
@@ -80,13 +79,16 @@ class App extends Component {
     const modeBtns = document.querySelectorAll('.mode-btn');
     modeBtns.forEach((btn) => btn.classList.remove('active'));
     e.target.classList.add('active');
+    this.setState({ loading: true });
     if (e.target.id == 'rated') {
       getRatedMovies(this.state.guestSessionId).then((data) => {
-        console.log(data);
-        this.setState({ data: data.results, totalPages: data.total_results });
+        this.setState({ ratedData: data.results, totalPages: data.total_results, searching: false, loading: false });
+      });
+    } else {
+      getMovieDB().then((data) => {
+        this.setState({ data: data.results, totalPages: data.total_results, loading: false });
       });
     }
-
     this.setState({ showSearching: e.target.id == 'search' ? true : false });
   };
 
@@ -114,6 +116,7 @@ class App extends Component {
           totalPages: data.total_results,
           data: data.results,
           loading: false,
+          searchingWord: null,
         });
       })
       .catch((error) => {
@@ -127,33 +130,13 @@ class App extends Component {
     addRating(id, guestSessionId, value);
   };
 
-  showRated = () => {
-    // getRatedMovies(this.state.guestSessionId).then((data) => console.log(data));
-    console.log(this.state);
-  };
-
   render() {
     if (!navigator.onLine) {
       alert('Нет соединения с интернетом. Пожалуйста, проверьте ваше подключение.');
       return;
     }
-    const { data, genres, onError, currentPage, totalPages, loading, showSearching } = this.state;
-
-    if (loading && !onError)
-      return (
-        <Flex align="center" justify="center" style={{ height: '100vh' }}>
-          <Spin
-            indicator={
-              <LoadingOutlined
-                style={{
-                  fontSize: 80,
-                }}
-                spin
-              />
-            }
-          />
-        </Flex>
-      );
+    const { data, genres, onError, currentPage, totalPages, loading, showSearching, ratedData } = this.state;
+    const dataFromMode = showSearching ? data : ratedData;
 
     if (!data && onError)
       return (
@@ -163,15 +146,11 @@ class App extends Component {
     return (
       <div className="App">
         <GenresProvider value={genres}>
-          <Search
-            showRated={this.showRated}
-            show={showSearching}
-            inputOnChangeFn={this.startSearching}
-            toggleFn={this.swichMode}
-          />
+          <Search show={showSearching} inputOnChangeFn={this.startSearching} toggleFn={this.swichMode} />
           <CardList
+            loading={loading}
             movieRatingOnchange={this.setMovieRating}
-            data={data}
+            data={dataFromMode}
             currentPage={currentPage}
             totalPages={totalPages}
             tooglePage={this.tooglePage}

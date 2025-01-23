@@ -4,8 +4,7 @@ import { Component } from 'react';
 
 class Search extends Component {
   render() {
-    // eslint-disable-next-line react/prop-types
-    const { inputOnChangeFn, show, toggleFn, showRated } = this.props;
+    const { inputOnChangeFn, show, toggleFn } = this.props;
 
     return (
       <section className="search">
@@ -24,7 +23,6 @@ class Search extends Component {
           type="text"
           placeholder="Type to search..."
         />
-        <button onClick={showRated}>Show Rated Films</button>
       </section>
     );
   }

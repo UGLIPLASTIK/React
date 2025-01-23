@@ -68,7 +68,6 @@ export const addRating = async (movieId, guestSessionId, rating) => {
     body: JSON.stringify({ value: rating }),
   };
   const response = await fetch(url, options);
-  console.log(response.json());
   return response.ok ? response : Error('Ошибка добавления рейтинга: ' + response.statusText);
 };
 

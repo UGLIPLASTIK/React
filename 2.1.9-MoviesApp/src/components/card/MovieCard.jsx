@@ -111,7 +111,7 @@ class MovieCard extends Component {
               </p>
               <Rate
                 allowHalf
-                defaultValue={0}
+                defaultValue={movie.rating ? movie.rating : 0}
                 count={10}
                 style={{ fontSize: '15px' }}
                 onChange={(value) => {

@@ -1,7 +1,8 @@
 import { Component } from 'react';
 import './card-list.scss';
-import { Alert, Pagination } from 'antd';
-import { array, func, number } from 'prop-types';
+import { Alert, Pagination, Flex, Spin } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
+import { array, bool, func, number } from 'prop-types';
 import MovieCard from '../card/MovieCard';
 
 class CardList extends Component {
@@ -16,7 +17,23 @@ class CardList extends Component {
   posterSize = 'w300';
 
   render() {
-    const { data, movieRatingOnchange, totalPages, currentPage, tooglePage } = this.props;
+    const { data, movieRatingOnchange, totalPages, currentPage, tooglePage, loading } = this.props;
+
+    if (loading)
+      return (
+        <Flex align="center" justify="center" style={{ height: '100vh' }}>
+          <Spin
+            indicator={
+              <LoadingOutlined
+                style={{
+                  fontSize: 80,
+                }}
+                spin
+              />
+            }
+          />
+        </Flex>
+      );
 
     return (
       <div className="card-list">
@@ -51,6 +68,7 @@ class CardList extends Component {
 }
 
 CardList.propTypes = {
+  loading: bool,
   data: array,
   currentPage: number,
   totalPages: number,
