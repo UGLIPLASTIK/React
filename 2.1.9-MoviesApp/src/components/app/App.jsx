@@ -138,7 +138,7 @@ class App extends Component {
     const { data, genres, onError, currentPage, totalPages, loading, showSearching, ratedData } = this.state;
     const dataFromMode = showSearching ? data : ratedData;
 
-    if (!data && onError)
+    if (onError)
       return (
         <Alert message="Request is temporarily unavailable, please try again later" type="warning" closable={false} />
       );
