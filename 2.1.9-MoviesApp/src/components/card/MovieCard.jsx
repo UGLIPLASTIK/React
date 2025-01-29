@@ -1,5 +1,4 @@
 import { Card, Image, Button, Rate } from 'antd';
-
 import { Component } from 'react';
 import './movie-card.scss';
 import { func, object } from 'prop-types';
